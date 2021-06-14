@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 # pylint:disable=line-too-long
-"""Domoticz Python plugin for Monitoring and logging of battery level for every device that provide
+"""Domoticz Python plugin for monitoring and logging for every device that provide battery level
 
-Author: Logread (aka 999LV on GitHub). Contact @logread on www.domoticz.com/forum
+Code inspired from: https://github.com/999LV/BatteryLevel
 
 Icons are from wpclipart.com. many thanks to them for these public domain graphics:
 
