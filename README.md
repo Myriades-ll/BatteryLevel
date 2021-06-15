@@ -1,3 +1,8 @@
 # Battery Level
-This is a [Domoticz](https://www.domoticz.com/) plugin
-This plugin provides widget battery level for every devices in use (not only zwave)
+This is a [Domoticz](https://www.domoticz.com/) plugin.
+
+## Features
+* Create one device for every real device in use
+
+## Automation (options)
+* Can marks every newly device as used
