@@ -44,6 +44,11 @@ class _PluginConfig():
         if not isinstance(parameters, dict) or cls._init_done:
             return
         cls.empty_level = int(parameters['Mode1'])
+        # fix: incorrect empty level
+        try:
+            assert 3 <= cls.empty_level <= 97
+        except AssertionError:
+            cls.empty_level = 50
         cls.use_every_devices = bool(int(parameters['Mode2']))
         cls.notify_all = bool(int(parameters['Mode3']))
         cls.plan_name = str(parameters['Mode4'])
@@ -527,13 +532,12 @@ class _Devices():
             # Mise à jour
             device = self._devices[self._map_devices_hw[hw_key]]
             if device.nValue != hw_batlevel:
-                empty_level = self._plugin_config.empty_level
-                delta_level = (100 - empty_level) / 3
-                if hw_batlevel >= (empty_level + 2 * delta_level):
+                delta_level = (100 - self._plugin_config.empty_level) / 3
+                if hw_batlevel >= (self._plugin_config.empty_level + 2 * delta_level):
                     image_id = "pyBattLev"
-                elif hw_batlevel >= (empty_level + delta_level):
+                elif hw_batlevel >= (self._plugin_config.empty_level + delta_level):
                     image_id = "pyBattLev_ok"
-                elif hw_batlevel >= empty_level:
+                elif hw_batlevel >= self._plugin_config.empty_level:
                     image_id = "pyBattLev_low"
                 else:
                     image_id = "pyBattLev_empty"
