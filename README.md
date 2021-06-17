@@ -13,5 +13,6 @@ This is a [Domoticz](https://www.domoticz.com/) plugin.
 * marks every device as used at device creation
 * add notification at device creation
 * create location
-  * 3 sorting methods: ascending, none or descending
-    * sorting by percentage then name
+  * sorting system:
+    * by percentage then name
+    * 3 methods: ascending, none or descending
