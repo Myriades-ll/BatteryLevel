@@ -32,14 +32,14 @@ Versions:
         <param field="Mode1" label="Empty level (%)" width="40px" required="true" default="50" />
         <param field="Mode2" label="Use every device">
             <options>
-                <option label="True" value="1" default="true" />
-                <option label="False" value="0" />
+                <option label="Yes" value="1" default="true" />
+                <option label="No" value="0" />
             </options>
         </param>
         <param field="Mode3" label="Add notification">
             <options>
-                <option label="True" value="1" default="true" />
-                <option label="False" value="0" />
+                <option label="Yes" value="1" default="true" />
+                <option label="No" value="0" />
             </options>
         </param>
         <param field="Mode4" label="View name" width="100px" default="Batteries" />

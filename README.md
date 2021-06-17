@@ -6,7 +6,7 @@ This is a [Domoticz](https://www.domoticz.com/) plugin.
 
 * create one device for every real device in use
 * define empty level
-  * icon change on four steps
+  * icon change on four ranges (0 <--> 25 <--> 50 <--> 75 <--> 100; % of empty level)
 
 ## Automation (options)
 
