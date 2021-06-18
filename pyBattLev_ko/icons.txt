@@ -1,1 +1,0 @@
-pyBattLev_ko;Batterie morte;Python Battery Level

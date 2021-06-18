@@ -478,7 +478,8 @@ class _Devices():
         "pyBattLev": "pyBattLev icons.zip",
         "pyBattLev_ok": "pyBattLev_ok icons.zip",
         "pyBattLev_low": "pyBattLev_low icons.zip",
-        "pyBattLev_empty": "pyBattLev_empty icons.zip"
+        "pyBattLev_empty": "pyBattLev_empty icons.zip",
+        "pyBattLev_ko": "pyBattLev_ko icons.zip"
     }
     _map_devices_hw = {}
     _urls = {
@@ -557,7 +558,6 @@ class _Devices():
             # max_time = hw_last_update + timedelta(minutes=15)
             # if max_time <= datetime.now():
             #     Domoticz.Log('batterie morte: {}'.format(max_time - datetime.now()))
-            #     # hw_batlevel = 0
             # batt level change
             if device.nValue != hw_batlevel:
                 delta_level = (100 - self._plugin_config.empty_level) / 3
