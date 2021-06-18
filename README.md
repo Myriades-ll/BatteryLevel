@@ -9,6 +9,7 @@ It is still in developpement.
 * create one device for every real device in use
 * define empty level
   * icon change on four ranges (0 <--> 25 <--> 50 <--> 75 <--> 100; % of empty level)
+  * in progress: detect a device down due to out of order
 
 ## Automation (options)
 
