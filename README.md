@@ -1,6 +1,7 @@
 # Battery Level
 
 This is a [Domoticz](https://www.domoticz.com/) plugin.
+It is still in developpement.
 
 ## Features
 
