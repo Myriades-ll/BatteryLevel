@@ -7,11 +7,12 @@ __all__ = ['Wrapper']
 
 # standards libs
 import json
+from datetime import datetime, timedelta
+from operator import attrgetter, itemgetter
 from queue import Queue
 from time import time
-from typing import Mapping, Tuple, Union, Iterable
+from typing import Iterable, Mapping, Tuple, Union
 from urllib.parse import quote_plus
-from operator import attrgetter, itemgetter
 
 # Domoticz lib
 import Domoticz
@@ -24,6 +25,24 @@ GET_PLANS = 0x1
 ADD_PLAN = 0x2
 GET_PLAN_DEVICES = 0x4
 MOVE_PLAN_DEVICE = 0x8
+DZ_FORMAT: str = r'%Y-%m-%d %H:%M:%S'
+
+
+def last_update_2_datetime(last_update: str) -> datetime:
+    """conversion de la valeur last_update de domoticz en datetime"""
+    try:  # python > 3.7
+        last_update_dt = datetime.strptime(
+            last_update,
+            DZ_FORMAT
+        )
+    except TypeError:  # python < 3.8
+        last_update_dt = datetime(
+            *(time.strptime(
+                last_update,
+                DZ_FORMAT
+            )[0:6])
+        )
+    return last_update_dt
 
 
 class _PluginConfig():
@@ -348,18 +367,19 @@ class _Plans():
             )
             self.update()
 
-        index = int((min(datas, key=itemgetter('order')))['order'])
+        order_index = 0
         for item in self._ordered_devices:
+            plan_index = 0
             for plan_device in datas:
                 if item.devidx == int(plan_device['devidx']):
-                    order = int(plan_device['order'])
-                    if order > index:
-                        move_down(False)
-                        return
-                    if order < index:
+                    if order_index > plan_index:
                         move_down(True)
                         return
-            index += 1
+                    if order_index < plan_index:
+                        move_down(False)
+                        return
+                plan_index += 1
+            order_index += 1
         if self._status & MOVE_PLAN_DEVICE:
             self._status ^= MOVE_PLAN_DEVICE
         Domoticz.Status('Tri des widgets terminé')
@@ -375,7 +395,7 @@ class _HardWares():
     """Collections des matériels"""
     _materials = {}
 
-    def items(self: object) -> Tuple[str, int, str]:
+    def items(self: object) -> Tuple[str, int, str, datetime]:
         """for...in... extended wrapper"""
         for key, value in self._materials.items():
             yield (key, *value)
@@ -390,14 +410,16 @@ class _HardWares():
                 self._materials.update({
                     hw_id: [
                         datas['BatteryLevel'],
-                        '{}: {}'.format(brand, datas['Name'])
+                        '{}: {}'.format(brand, datas['Name']),
+                        last_update_2_datetime(datas['LastUpdate'])
                     ]
                 })
             else:
                 self._materials.update({
                     hw_id: [
                         datas['BatteryLevel'],
-                        self._refactor_name(hw_id, brand, datas['Name'])
+                        self._refactor_name(hw_id, brand, datas['Name']),
+                        last_update_2_datetime(datas['LastUpdate'])
                     ]
                 })
 
@@ -501,7 +523,7 @@ class _Devices():
     def check_devices(self: object, hardwares: _HardWares) -> None:
         """Ajout/mise à jour des devices"""
         # check devices
-        for hw_key, hw_batlevel, hw_name in hardwares.items():
+        for hw_key, hw_batlevel, hw_name, hw_last_update in hardwares.items():
             # Création
             if hw_key not in self._map_devices_hw:
                 unit_id = max(self._map_devices_hw.values(), default=0) + 1
@@ -531,6 +553,12 @@ class _Devices():
 
             # Mise à jour
             device = self._devices[self._map_devices_hw[hw_key]]
+            # TODO: detect hardware down
+            # max_time = hw_last_update + timedelta(minutes=15)
+            # if max_time <= datetime.now():
+            #     Domoticz.Log('batterie morte: {}'.format(max_time - datetime.now()))
+            #     # hw_batlevel = 0
+            # batt level change
             if device.nValue != hw_batlevel:
                 delta_level = (100 - self._plugin_config.empty_level) / 3
                 if hw_batlevel >= (self._plugin_config.empty_level + 2 * delta_level):
@@ -553,6 +581,7 @@ class _Devices():
                     hw_batlevel,
                     True
                 )
+
             else:
                 device.Touch()
 
@@ -564,9 +593,12 @@ class _Devices():
                 remove = key
                 break
         if remove:
+            Domoticz.Status('Removing: {}'.format(
+                self._devices[self._map_devices_hw[remove]].Name
+            ))
             self._map_devices_hw.pop(remove)
             return
-        raise KeyError('Device not found! ({})'.format(unit_id))
+        Domoticz.Error('Device not found! ({})'.format(unit_id))
 
 
 class Wrapper():
@@ -592,7 +624,6 @@ class Wrapper():
     def on_start(self: object, **kwargs: dict) -> None:
         """Event démarrage"""
         self._plugin_config = _PluginConfig(kwargs['parameters'])
-        # Domoticz.Log('{}'.format(self._plugin_config))
         self._devices = _Devices(
             kwargs['devices'],
             kwargs['images']
