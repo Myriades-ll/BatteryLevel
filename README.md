@@ -10,6 +10,7 @@ This is a [Domoticz](https://www.domoticz.com/) plugin.
 * define empty level
   * icon change on four ranges (0 <--> 25 <--> 50 <--> 75 <--> 100; % of empty level)
 * dynamically adds every devices newly added
+* detect device down
 
 ## Automation (options)
 
@@ -19,8 +20,3 @@ This is a [Domoticz](https://www.domoticz.com/) plugin.
   * sorting system:
     * by percentage then name
     * 3 methods: ascending, none or descending
-
-## TODO
-
-* in progress:
-  * detect a device down; then changes icon
