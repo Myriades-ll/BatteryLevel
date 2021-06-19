@@ -465,11 +465,10 @@ class _HardWares():
     @staticmethod
     def _decode_hw_id(datas: dict) -> str:
         """[DOCSTRING]"""
+        hw_id = datas['ID']
         # openzwave
         if datas['HardwareTypeVal'] in (21, 94):
-            hw_id = '00{}'.format(datas['ID'][-4:-2])
-        else:
-            hw_id = datas['ID']
+            hw_id = '00{}'.format(hw_id[-4:-2])
         return str(hw_id)[-4:]
 
 
@@ -496,7 +495,7 @@ class _Devices():
             "tsendalways=false&",
             "tsystems=&",
             "ttype=5&",
-            "tvalue=50&",  # 50%
+            "tvalue={}&",  # 50%
             "twhen=4&",  # less or equal
             "type=command"
         ]
@@ -552,18 +551,18 @@ class _Devices():
                         verb="GET",
                         url=''.join(self._urls["notif"]).format(
                             self._devices[unit_id].ID,
-                            quote_plus('Batterie déchargée!')
+                            quote_plus('Batterie déchargée!'),
+                            self._plugin_config.empty_level
                         )
                     )
 
             # Mise à jour
             device = self._devices[self._map_devices_hw[hw_key]]
-            # TODO: detect hardware down
+            # detect hardware down
             max_time = hw_last_update + timedelta(minutes=30)
             if max_time < datetime.now():
-                Domoticz.Log('batterie morte: {} - {}'.format(
-                    device.Name,
-                    datetime.now() - max_time
+                Domoticz.Error('batterie morte: {}'.format(
+                    device.Name
                 ))
                 hw_batlevel = 0
             # batt level change
