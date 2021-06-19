@@ -415,11 +415,15 @@ class _HardWares():
                     ]
                 })
             else:
+                prev_last_update = self._materials[hw_id][2]
+                new_last_update = last_update_2_datetime(datas['LastUpdate'])
+                if new_last_update > prev_last_update:
+                    prev_last_update = new_last_update
                 self._materials.update({
                     hw_id: [
                         datas['BatteryLevel'],
                         self._refactor_name(hw_id, brand, datas['Name']),
-                        last_update_2_datetime(datas['LastUpdate'])
+                        prev_last_update
                     ]
                 })
 
@@ -555,9 +559,13 @@ class _Devices():
             # Mise à jour
             device = self._devices[self._map_devices_hw[hw_key]]
             # TODO: detect hardware down
-            # max_time = hw_last_update + timedelta(minutes=15)
-            # if max_time <= datetime.now():
-            #     Domoticz.Log('batterie morte: {}'.format(max_time - datetime.now()))
+            max_time = hw_last_update + timedelta(minutes=30)
+            if max_time < datetime.now():
+                Domoticz.Log('batterie morte: {} - {}'.format(
+                    device.Name,
+                    datetime.now() - max_time
+                ))
+                hw_batlevel = 0
             # batt level change
             if device.nValue != hw_batlevel:
                 delta_level = (100 - self._plugin_config.empty_level) / 3
@@ -567,6 +575,8 @@ class _Devices():
                     image_id = "pyBattLev_ok"
                 elif hw_batlevel >= self._plugin_config.empty_level:
                     image_id = "pyBattLev_low"
+                elif hw_batlevel == 0:
+                    image_id = "pyBattLev_ko"
                 else:
                     image_id = "pyBattLev_empty"
                 device.Update(
