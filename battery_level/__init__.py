@@ -356,6 +356,7 @@ class _Plans():
             if not self._status & MOVE_PLAN_DEVICE:
                 self._status |= MOVE_PLAN_DEVICE
                 Domoticz.Status('Début de tri des widgets')
+                Domoticz.Heartbeat(1)
             way = 1 if down else 0
             self._requests.add(
                 'GET',
@@ -382,6 +383,7 @@ class _Plans():
             order_index += 1
         if self._status & MOVE_PLAN_DEVICE:
             self._status ^= MOVE_PLAN_DEVICE
+        Domoticz.Heartbeat(10)
         Domoticz.Status('Tri des widgets terminé')
 
     def __str__(self: object) -> str:
@@ -535,6 +537,7 @@ class _Devices():
                     hw_key: unit_id
                 })
                 Domoticz.Status('Création: {}'.format(hw_name))
+                Domoticz.Debug('{}'.format(hw_name))
                 params = {
                     'Name': hw_name,
                     'Unit': unit_id,
@@ -558,6 +561,11 @@ class _Devices():
 
             # Mise à jour
             device = self._devices[self._map_devices_hw[hw_key]]
+            Domoticz.Debug('{} - {} - {}'.format(
+                device.Name,
+                device.nValue,
+                device.sValue
+            ))
             # detect hardware down
             max_time = hw_last_update + timedelta(minutes=30)
             if max_time < datetime.now():
@@ -646,6 +654,7 @@ class Wrapper():
             Address='127.0.0.1',
             Port='8080'
         )
+        Domoticz.Debugging(2)
 
     def on_stop(self: object) -> None:
         """Event arrêt"""
@@ -661,8 +670,6 @@ class Wrapper():
             - status: 0 if no error
             - description: failure reason
         """
-        # https://valentin29.freeboxos.fr:16443/json.htm?type=devices&used=true
-        # http://127.0.0.1:8080/json.htm?type=devices&used=true
         connection, status, description = args
         if connection.Name == 'bat_lev_conn':
             if status == 0:
