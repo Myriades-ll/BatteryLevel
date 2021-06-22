@@ -55,6 +55,7 @@ class _PluginConfig():
     sort_descending = False
     sort_plan = False
     plan_name = ''
+    debug_level = 0
     _init_done = False
 
     @classmethod
@@ -78,6 +79,7 @@ class _PluginConfig():
         elif mode5 == 0:
             cls.sort_descending = True
         cls.sort_plan = cls.sort_ascending != cls.sort_descending
+        cls.debug_level = int(parameters['Mode6'])
         cls._init_done = True
 
     @classmethod
@@ -641,6 +643,7 @@ class Wrapper():
     def on_start(self: object, **kwargs: dict) -> None:
         """Event démarrage"""
         self._plugin_config = _PluginConfig(kwargs['parameters'])
+        Domoticz.Debugging(self._plugin_config.debug_level)
         self._devices = _Devices(
             kwargs['devices'],
             kwargs['images']
@@ -654,7 +657,6 @@ class Wrapper():
             Address='127.0.0.1',
             Port='8080'
         )
-        Domoticz.Debugging(2)
 
     def on_stop(self: object) -> None:
         """Event arrêt"""

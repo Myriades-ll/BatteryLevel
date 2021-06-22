@@ -50,6 +50,13 @@ Versions:
                 <option label="Descending" value="0" />
             </options>
         </param>
+        <param field="Mode6" label="Debugging">
+            <options>
+                <option label="Nothing" value="0" default="true"/>
+                <option label="All" value="1" />
+                <option label="Plugin" value="2" />
+            </options>
+        </param>
     </params>
 </plugin>
 """
