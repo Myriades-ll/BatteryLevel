@@ -13,6 +13,7 @@ from queue import Queue
 from time import time
 from typing import Iterable, Mapping, Tuple, Union
 from urllib.parse import quote_plus
+from inspect import stack
 
 # Domoticz lib
 import Domoticz
@@ -43,6 +44,13 @@ def last_update_2_datetime(last_update: str) -> datetime:
             )[0:6])
         )
     return last_update_dt
+
+
+def debug(*args):
+    """Extended debug"""
+    Domoticz.Debug('Caller: {}'.format(stack()[1].function))
+    for arg in args:
+        Domoticz.Debug('{}'.format(arg))
 
 
 class _PluginConfig():
@@ -539,7 +547,7 @@ class _Devices():
                     hw_key: unit_id
                 })
                 Domoticz.Status('Création: {}'.format(hw_name))
-                Domoticz.Debug('{}'.format(hw_name))
+                debug('{}'.format(hw_name))
                 params = {
                     'Name': hw_name,
                     'Unit': unit_id,
@@ -563,7 +571,7 @@ class _Devices():
 
             # Mise à jour
             device = self._devices[self._map_devices_hw[hw_key]]
-            Domoticz.Debug('{} - {} - {}'.format(
+            debug('{} - {} - {}'.format(
                 device.Name,
                 device.nValue,
                 device.sValue
@@ -600,8 +608,7 @@ class _Devices():
                     hw_batlevel,
                     True
                 )
-
-            else:
+            elif hw_batlevel > 0:
                 device.Touch()
 
     def remove(self: object, unit_id: int) -> None:
@@ -644,6 +651,7 @@ class Wrapper():
         """Event démarrage"""
         self._plugin_config = _PluginConfig(kwargs['parameters'])
         Domoticz.Debugging(self._plugin_config.debug_level)
+        debug('plugin config: {}'.format(self._plugin_config))
         self._devices = _Devices(
             kwargs['devices'],
             kwargs['images']
@@ -731,6 +739,7 @@ class Wrapper():
         if datas['title'] == 'Devices':
             for data in datas['result']:
                 self._hardwares.update(data)
+            debug('{}'.format(self._hardwares))
             self._devices.check_devices(self._hardwares)
         # Notifications
         elif datas['title'] == 'AddNotification':
