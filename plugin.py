@@ -69,7 +69,7 @@ import battery_level
 WRAPPER = battery_level.Wrapper()
 
 
-def onStart():  # pylint: disable=invalid-name
+def onStart() -> None:  # pylint: disable=invalid-name
     """Démarrage du plugin"""
     # pylint: disable=undefined-variable
     WRAPPER.on_start(
@@ -81,30 +81,30 @@ def onStart():  # pylint: disable=invalid-name
     # pylint: enable=undefined-variable
 
 
-def onStop():  # pylint: disable=invalid-name
+def onStop() -> None:  # pylint: disable=invalid-name
     """onStop"""
     WRAPPER.on_stop()
 
 
-def onConnect(*args):  # pylint: disable=invalid-name
+def onConnect(*args) -> None:  # pylint: disable=invalid-name
     """onConnect"""
     WRAPPER.on_connect(*args)
 
 
-def onMessage(*args):  # pylint: disable=invalid-name
+def onMessage(*args) -> None:  # pylint: disable=invalid-name
     """onMessage"""
     WRAPPER.on_message(*args)
 
 
-def onCommand(*_args):  # pylint: disable=invalid-name
+def onCommand(*_args) -> None:  # pylint: disable=invalid-name
     """onCommand"""
 
 
-def onNotification(*_args):  # pylint: disable=invalid-name
+def onNotification(*_args) -> None:  # pylint: disable=invalid-name
     """onNotification"""
 
 
-def onDisconnect(*_args):  # pylint: disable=invalid-name
+def onDisconnect(*_args) -> None:  # pylint: disable=invalid-name
     """onDisconnect"""
 
 
