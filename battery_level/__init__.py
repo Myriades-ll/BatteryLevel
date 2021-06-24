@@ -8,12 +8,12 @@ __all__ = ['Wrapper']
 # standards libs
 import json
 from datetime import datetime, timedelta
+from inspect import stack
 from operator import attrgetter, itemgetter
 from queue import Queue
-from time import time
+from time import strptime, time
 from typing import Iterable, Mapping, Tuple, Union
 from urllib.parse import quote_plus
-from inspect import stack
 
 # Domoticz lib
 import Domoticz
@@ -29,6 +29,19 @@ MOVE_PLAN_DEVICE = 0x8
 DZ_FORMAT: str = r'%Y-%m-%d %H:%M:%S'
 
 
+def debug(*args):
+    """Extended debug"""
+    func_list = []
+    for frame in stack():
+        func_list.append(frame.function)
+    func_list.pop(0)
+    func_list.pop()
+    func_list.reverse()
+    Domoticz.Debug('Caller: {}'.format('.'.join(func_list)))
+    for arg in args:
+        Domoticz.Debug('{}'.format(arg))
+
+
 def last_update_2_datetime(last_update: str) -> datetime:
     """conversion de la valeur last_update de domoticz en datetime"""
     try:  # python > 3.7
@@ -37,20 +50,21 @@ def last_update_2_datetime(last_update: str) -> datetime:
             DZ_FORMAT
         )
     except TypeError:  # python < 3.8
-        last_update_dt = datetime(
-            *(time.strptime(
+        try:
+            last_update_dt = datetime(
+                *(strptime(last_update, DZ_FORMAT)[0:6])
+            )
+        except AttributeError:
+            Domoticz.Error("datetime.strptime('{}', '{}')".format(
                 last_update,
                 DZ_FORMAT
-            )[0:6])
-        )
+            ))
+            Domoticz.Error("time.strptime('{}', '{}')".format(
+                last_update,
+                DZ_FORMAT
+            ))
+            last_update_dt = datetime.now()
     return last_update_dt
-
-
-def debug(*args):
-    """Extended debug"""
-    Domoticz.Debug('Caller: {}'.format(stack()[1].function))
-    for arg in args:
-        Domoticz.Debug('{}'.format(arg))
 
 
 class _PluginConfig():
@@ -212,7 +226,7 @@ class _Requests():
     @classmethod
     def add(cls: object, verb: str, url: str) -> None:
         """Ajoute un élément à la queue"""
-        Domoticz.Log('Ajout: {} - {}'.format(verb, url))
+        debug('Ajout: {} - {}'.format(verb, url))
         cls._last_in_datas = {
             "Verb": verb,
             "URL": url
@@ -225,7 +239,7 @@ class _Requests():
         """Renvoie le premier élément inséré dans la queue"""
         cls._last_out_datas = cls._queue.get()
         cls._queue_length -= 1
-        Domoticz.Log('Sortie: {}'.format(cls._last_out_datas))
+        debug('Sortie: {}'.format(cls._last_out_datas))
         return cls._last_out_datas
 
     @classmethod
