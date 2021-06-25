@@ -433,25 +433,22 @@ class _HardWares():
             hw_id = self._build_hw_id(datas)
             # first time hw_id is found
             if hw_id not in self._materials:
-                self._materials.update({
-                    hw_id: [
-                        datas['BatteryLevel'],
-                        '{}: {}'.format(brand, datas['Name']),
-                        last_update_2_datetime(datas['LastUpdate'])
-                    ]
-                })
+                name = '{}: {}'.format(brand, datas['Name'])
+                last_updated = last_update_2_datetime(datas['LastUpdate'])
             else:
-                prev_last_update = self._materials[hw_id][2]
-                new_last_update = last_update_2_datetime(datas['LastUpdate'])
-                if new_last_update > prev_last_update:
-                    prev_last_update = new_last_update
-                self._materials.update({
-                    hw_id: [
-                        datas['BatteryLevel'],
-                        self._refactor_name(hw_id, brand, datas['Name']),
-                        prev_last_update
-                    ]
-                })
+                name = self._refactor_name(hw_id, brand, datas['Name'])
+                last_updated = self._materials[hw_id][2]
+                new_last_updated = last_update_2_datetime(datas['LastUpdate'])
+                if new_last_updated > last_updated:
+                    last_updated = new_last_updated
+            # update _materials
+            self._materials.update({
+                hw_id: [
+                    datas['BatteryLevel'],
+                    name,
+                    last_updated
+                ]
+            })
 
     def __iter__(self: object) -> None:
         """for...in... wrapper"""
@@ -749,6 +746,7 @@ class Wrapper():
         # FIX: missing result; happens when there's no item
         if 'result' not in datas:
             datas.update({'result': {}})
+        debug(datas['title'])
         # Device
         if datas['title'] == 'Devices':
             for data in datas['result']:
