@@ -428,19 +428,18 @@ class _HardWares():
 
     def update(self: object, datas: dict) -> bool:
         """Ajoute ou met à jour un matériel"""
-        if datas['BatteryLevel'] < 255:
+        if 0 < datas['BatteryLevel'] <= 100:
             brand = datas['HardwareType'].split()[0]
             hw_id = self._build_hw_id(datas)
             # first time hw_id is found
+            last_updated = last_update_2_datetime(datas['LastUpdate'])
             if hw_id not in self._materials:
                 name = '{}: {}'.format(brand, datas['Name'])
-                last_updated = last_update_2_datetime(datas['LastUpdate'])
             else:
                 name = self._refactor_name(hw_id, brand, datas['Name'])
-                last_updated = self._materials[hw_id][2]
-                new_last_updated = last_update_2_datetime(datas['LastUpdate'])
-                if new_last_updated > last_updated:
-                    last_updated = new_last_updated
+                old_last_updated = self._materials[hw_id][2]
+                if last_updated < old_last_updated:
+                    last_updated = old_last_updated
             # update _materials
             self._materials.update({
                 hw_id: [
@@ -449,6 +448,8 @@ class _HardWares():
                     last_updated
                 ]
             })
+        elif datas['BatteryLevel'] == 0:
+            Domoticz.Error('({}){} @ 0%'.format(datas['ID'], datas['Name']))
 
     def __iter__(self: object) -> None:
         """for...in... wrapper"""
