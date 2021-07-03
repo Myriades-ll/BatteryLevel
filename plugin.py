@@ -29,7 +29,7 @@ Versions:
         Other ways, devices are first sort by percentage, then name; either ascending or descending.</p>
     </description>
     <params>
-        <param field="Mode1" label="Empty level (%)" width="40px" required="true" default="50" />
+        <param field="Mode1" label="Empty level (%)" width="40px" required="true" default="25" />
         <param field="Mode2" label="Use every device">
             <options>
                 <option label="Yes" value="1" default="true" />

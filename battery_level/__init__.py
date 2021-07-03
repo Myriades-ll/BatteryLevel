@@ -7,17 +7,18 @@ __all__ = ['Wrapper']
 
 # standards libs
 import json
+from statistics import mean
+from collections import namedtuple
 from datetime import datetime, timedelta
 from inspect import stack
 from operator import attrgetter, itemgetter
 from queue import Queue
 from time import strptime, time
-from typing import Iterable, Mapping, Tuple, Union
+from typing import Iterable, Mapping, Tuple, Union, List
 from urllib.parse import quote_plus
 
 # Domoticz lib
 import Domoticz
-
 # local libs
 
 # Constantes
@@ -26,7 +27,7 @@ GET_PLANS = 0x1
 ADD_PLAN = 0x2
 GET_PLAN_DEVICES = 0x4
 MOVE_PLAN_DEVICE = 0x8
-DZ_FORMAT: str = r'%Y-%m-%d %H:%M:%S'
+DZ_FORMAT = r'%Y-%m-%d %H:%M:%S'
 
 
 def debug(*args):
@@ -67,9 +68,80 @@ def last_update_2_datetime(last_update: str) -> datetime:
     return last_update_dt
 
 
+class _Bounces():
+    """Gestion des rebonds des valeurs"""
+    _BOUNCEMODES = namedtuple(
+        'Modes',
+        ['disabled', 'systematic', 'pond_1h', 'pond_1d']
+    )
+
+    def __init__(
+            self: object,
+            mode: int,
+            mini: Union[str, int, float] = 0,
+            maxi: Union[str, int, float] = 100,
+            reset: Union[str, int, float] = 80) -> None:
+        """Initialisation de la classe"""
+        assert 0 < reset <= 100
+        self._modes = self._BOUNCEMODES(0, 1, 2, 4)
+        self._bounce_mode = mode
+        self._min = mini
+        self._max = maxi
+        if 0 < reset < 1:
+            self._reset = reset
+        elif reset <= 100:
+            self._reset = reset / 100
+        self._datas = []
+        self._last_value = 100
+
+    def update(self: object, new_data: Union[str, int, float]) -> float:
+        """Mise à jour des données"""
+        assert type(new_data) in [str, int, float]
+        new_data = float(new_data)
+        debug('new data: {}'.format(new_data))
+        # return as is
+        if not self._bounce_mode:
+            debug('as is')
+            self._last_value = new_data
+        # no bounce; always remembering the lowest value
+        elif self._bounce_mode & self._modes.systematic:
+            if new_data < self._last_value:
+                self._last_value = new_data
+        else:
+            self._datas.append(new_data)
+            # 1 hour weighted bounce (last 12 values)
+            if self._bounce_mode & self._modes.pond_1h:
+                debug('pond 1h')
+                pond = 12
+            # 1 day weighted bounce (last 288 values)
+            else:  # default
+                debug('pond 1d')
+                pond = 288
+            while len(self._datas) > pond:
+                self._datas.pop(0)
+            self._last_value = mean(self._datas)
+        return self._last_value
+
+    def __str__(self: object) -> str:
+        """Wrapper pour str()"""
+        return '{} {}'.format(self._modes, self._bounce_mode)
+
+    def __repr__(self: object) -> str:
+        """Wrapper pour repr()"""
+        return str(self)
+
+    def __float__(self: object) -> float:
+        """Wrapper pour float()"""
+        return self._last_value
+
+    def __int__(self: object) -> int:
+        """Wrapper pour int()"""
+        return int(self._last_value)
+
+
 class _PluginConfig():
     """Configuration du plugin"""
-    empty_level = 50
+    level_delta = empty_level = 25
     use_every_devices = False
     notify_all = False
     create_plan = False
@@ -90,7 +162,9 @@ class _PluginConfig():
         try:
             assert 3 <= cls.empty_level <= 97
         except AssertionError:
-            cls.empty_level = 50
+            debug(
+                'Mauvais réglage plugin; empty level: {} set @ 25%'.format(cls.empty_level))
+        cls.level_delta = (100 - cls.empty_level) / 3
         cls.use_every_devices = bool(int(parameters['Mode2']))
         cls.notify_all = bool(int(parameters['Mode3']))
         cls.plan_name = str(parameters['Mode4'])
@@ -419,16 +493,17 @@ class _Plans():
 
 class _HardWares():
     """Collections des matériels"""
-    _materials = {}
+    _materials: Mapping[str, Tuple[float, str, datetime]] = {}
 
-    def items(self: object) -> Tuple[str, int, str, datetime]:
+    def items(self: object) -> Tuple[str, float, str, datetime]:
         """for...in... extended wrapper"""
         for key, value in self._materials.items():
             yield (key, *value)
 
     def update(self: object, datas: dict) -> bool:
         """Ajoute ou met à jour un matériel"""
-        if 0 < datas['BatteryLevel'] <= 100:
+        battery_level = float(datas['BatteryLevel'])
+        if 0 < battery_level <= 100:
             brand = datas['HardwareType'].split()[0]
             hw_id = self._build_hw_id(datas)
             # first time hw_id is found
@@ -443,12 +518,12 @@ class _HardWares():
             # update _materials
             self._materials.update({
                 hw_id: [
-                    datas['BatteryLevel'],
+                    battery_level,
                     name,
                     last_updated
                 ]
             })
-        elif datas['BatteryLevel'] == 0:
+        elif battery_level == 0:
             Domoticz.Error('({}){} @ 0%'.format(datas['ID'], datas['Name']))
 
     def __iter__(self: object) -> None:
@@ -496,6 +571,36 @@ class _HardWares():
         return str(hw_id)[-4:]
 
 
+class _Device():
+    """Elément device"""
+
+    def __init__(
+            self: object,
+            key: str,
+            name: str,
+            bat_level: float,
+            last_update: datetime) -> None:
+        """Initialisation de la classe"""
+        self.bounces = _Bounces(2, 0, 100, 80)
+        self.is_dead = False
+        self.key = key
+        self.name = name
+        self.batlevel = bat_level
+        self.last_update = last_update
+
+    def __str__(self: object) -> str:
+        """Wrapper pour str()"""
+        return '{}: {}% @{}'.format(
+            self.name,
+            self.batlevel,
+            self.last_update
+        )
+
+    def __repr__(self: object) -> str:
+        """Wrapper pour repr()"""
+        return str(self)
+
+
 class _Devices():
     """Classe des devices"""
     _devices: Mapping[str, Domoticz.Device] = {}
@@ -508,7 +613,10 @@ class _Devices():
         "pyBattLev_empty": "pyBattLev_empty icons.zip",
         "pyBattLev_ko": "pyBattLev_ko icons.zip"
     }
+    # _no_bounce: _Bounces = None
+    _map_devices: Mapping[str, _Device] = {}
     _map_devices_hw = {}
+    _map_devices_bounces: Mapping[str, _Bounces] = {}
     _urls = {
         "notif": [
             "/json.htm?",
@@ -547,6 +655,9 @@ class _Devices():
         """Initialisation du mapping"""
         for device in self._devices.values():
             self._map_devices_hw.update({device.DeviceID: device.Unit})
+            self._map_devices_bounces.update({
+                device.DeviceID: _Bounces(2, 0, 100, 80)
+            })
 
     def check_devices(self: object, hardwares: _HardWares) -> None:
         """Ajout/mise à jour des devices"""
@@ -554,12 +665,19 @@ class _Devices():
         for hw_key, hw_batlevel, hw_name, hw_last_update in hardwares.items():
             # Création
             if hw_key not in self._map_devices_hw:
+                # unit_ids = set(self._map_devices_hw.values())
+                # unit_ids_all = set(range(1, 255))
+                # unit_ids_free = unit_ids_all - unit_ids
+                # if len(unit_ids_free) > 0:
+                #     unit_id = list(unit_ids_free)[0]
                 unit_id = max(self._map_devices_hw.values(), default=0) + 1
                 self._map_devices_hw.update({
                     hw_key: unit_id
                 })
+                self._map_devices_bounces.update({
+                    hw_key: _Bounces(2, 0, 100, 80)
+                })
                 Domoticz.Status('Création: {}'.format(hw_name))
-                debug('{}'.format(hw_name))
                 params = {
                     'Name': hw_name,
                     'Unit': unit_id,
@@ -576,18 +694,14 @@ class _Devices():
                         verb="GET",
                         url=''.join(self._urls["notif"]).format(
                             self._devices[unit_id].ID,
-                            quote_plus('Batterie déchargée!'),
+                            quote_plus(
+                                '{} batterie déchargée!'.format(hw_name)),
                             self._plugin_config.empty_level
                         )
                     )
 
             # Mise à jour
             device = self._devices[self._map_devices_hw[hw_key]]
-            debug('{} - {} - {}'.format(
-                device.Name,
-                device.nValue,
-                device.sValue
-            ))
             # detect hardware down
             max_time = hw_last_update + timedelta(minutes=30)
             if max_time < datetime.now():
@@ -595,33 +709,43 @@ class _Devices():
                     device.Name
                 ))
                 hw_batlevel = 0
+            # no bounce
+            hw_batlevel = self._map_devices_bounces[hw_key].update(hw_batlevel)
+            debug('{} - {} - {}'.format(
+                device.Name,
+                device.sValue,
+                hw_batlevel
+            ))
             # batt level change
-            if device.nValue != hw_batlevel:
-                delta_level = (100 - self._plugin_config.empty_level) / 3
-                if hw_batlevel >= (self._plugin_config.empty_level + 2 * delta_level):
+            if float(device.sValue) != hw_batlevel:
+                if hw_batlevel > (
+                        self._plugin_config.empty_level +
+                        2 * self._plugin_config.level_delta):
                     image_id = "pyBattLev"
-                elif hw_batlevel >= (self._plugin_config.empty_level + delta_level):
+                elif hw_batlevel > (
+                        self._plugin_config.empty_level +
+                        self._plugin_config.level_delta):
                     image_id = "pyBattLev_ok"
-                elif hw_batlevel >= self._plugin_config.empty_level:
+                elif hw_batlevel > self._plugin_config.empty_level:
                     image_id = "pyBattLev_low"
-                elif hw_batlevel == 0:
-                    image_id = "pyBattLev_ko"
-                else:
+                elif hw_batlevel > 0:
                     image_id = "pyBattLev_empty"
+                else:
+                    image_id = "pyBattLev_ko"
                 device.Update(
-                    hw_batlevel,
-                    str(hw_batlevel),
+                    0,
+                    str(round(hw_batlevel, 1)),
                     Image=self._images[image_id].ID
-                )
-                # pour le tri des widgets
-                self._ordered_devices.update(
-                    device.ID,
-                    device.Name,
-                    hw_batlevel,
-                    True
                 )
             elif hw_batlevel > 0:
                 device.Touch()
+            # pour le tri des widgets
+            self._ordered_devices.update(
+                device.ID,
+                device.Name,
+                hw_batlevel,
+                True
+            )
 
     def remove(self: object, unit_id: int) -> None:
         """Retire le device"""
