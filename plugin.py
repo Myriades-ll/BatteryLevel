@@ -16,7 +16,7 @@ Versions:
         <p>Version 1.0 for domoticz 2021.1 version</p>
         <h3>Options</h3>
         <h4>Empty level:</h4>
-        <p>The value from which you consider a battery empty. This value is also used for notification.</p><br/>
+        <p>The value from which you consider a battery empty. This value is also used for treshold notification and bounce system reset.</p><br/>
         <h4>Use every devices:</h4>
         <p>Automatically marks every device created by the plugin as used.</p><br/>
         <h4>Add notification:</h4>
@@ -29,7 +29,7 @@ Versions:
         Other ways, devices are first sort by percentage, then name; either ascending or descending.</p>
     </description>
     <params>
-        <param field="Mode1" label="Empty level (%)" width="40px" required="true" default="50" />
+        <param field="Mode1" label="Empty level (%)" width="40px" required="true" default="25" />
         <param field="Mode2" label="Use every device">
             <options>
                 <option label="Yes" value="1" default="true" />
