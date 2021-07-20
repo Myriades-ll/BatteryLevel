@@ -1,2 +1,3 @@
 .gitignore
 /Domoticz
+/__pycache__
