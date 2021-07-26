@@ -3,7 +3,7 @@
 # pylint:disable=line-too-long
 """Domoticz Python plugin for monitoring and logging for every device that provide battery level
 
-Code inspired from: https://github.com/999LV/BatteryLevel
+Idea inspired from: https://github.com/999LV/BatteryLevel
 
 Icons are from wpclipart.com. many thanks to them for these public domain graphics:
 
@@ -13,7 +13,6 @@ Versions:
 <plugin key="pyBattLev" name="Battery monitoring for all devices" author="Myriades" version="1.0">
     <description>
         <h2>Battery Level python plugin</h2>
-        <p>Version 1.0 for domoticz 2021.1 version</p>
         <h3>Options</h3>
         <h4>Empty level:</h4>
         <p>The value from which you consider a battery empty. This value is also used for treshold notification and bounce system reset.</p><br/>
@@ -72,11 +71,11 @@ WRAPPER = battery_level.Wrapper()
 def onStart() -> None:  # pylint: disable=invalid-name
     """Démarrage du plugin"""
     # pylint: disable=undefined-variable
+    battery_level.PluginConfig(Parameters)
+    battery_level.Images(Images)
+    battery_level.Devices(Devices)
     WRAPPER.on_start(
-        devices=Devices,
-        parameters=Parameters,
-        settings=Settings,
-        images=Images
+        settings=Settings
     )
     # pylint: enable=undefined-variable
 
@@ -113,8 +112,9 @@ def onHeartbeat() -> None:  # pylint: disable=invalid-name
     WRAPPER.on_heartbeat()
 
 
-def onDeviceModified(*_args) -> None:  # pylint: disable=invalid-name
+def onDeviceModified(*args) -> None:  # pylint: disable=invalid-name
     """onDeviceModified"""
+    WRAPPER.on_device_modified(*args)
 
 
 def onDeviceRemoved(*args) -> None:  # pylint: disable=invalid-name
