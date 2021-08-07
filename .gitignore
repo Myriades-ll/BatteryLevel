@@ -1,3 +1,5 @@
 .gitignore
 /Domoticz
 __pycache__
+test*.py
+*.txt
