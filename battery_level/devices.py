@@ -124,7 +124,7 @@ class _Bounces:
             self._pond = 288
         self._datas = deque(maxlen=self._pond)
 
-    def _update(self: object, new_data: Union[str, int, float]) -> float:
+    def _update_bounce(self: object, new_data: Union[str, int, float]) -> float:
         """Mise à jour des données"""
         try:
             assert type(new_data) in [str, int, float]
@@ -191,7 +191,7 @@ class _Device(_Bounces):
             - last_update (str, datetime): last time updated
             - name (str): new name
         """
-        self.bat_lev = self._update(kwargs.get('bat_lev', self.bat_lev))
+        self.bat_lev = self._update_bounce(kwargs.get('bat_lev', self.bat_lev))
         self.last_update = last_update_2_datetime(kwargs.get(
             'last_update',
             self.last_update
@@ -207,7 +207,7 @@ class _Device(_Bounces):
             Domoticz.Error('batterie déchargée: {}'.format(
                 self.name
             ))
-            self.bat_lev = self._update(0)
+            self.bat_lev = self._update_bounce(0)
 
     def _set_image_id(self: object) -> None:
         """Define Domoticz image ID
