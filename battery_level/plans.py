@@ -14,6 +14,7 @@ from battery_level.common import debug
 from battery_level.devices import Devices
 from battery_level.plugin_config import PluginConfig
 from battery_level.requests import Requests
+from domoticz_ import DomSettings
 
 
 class _OrderedListItem:
@@ -209,10 +210,13 @@ class Plans:
                     )
                 )
         # si besoin, lancement d'une vérification du plan
+        debug('allowwidgetordering: {}'.format(DomSettings.system.interface))
+        debug('allowwidgetordering: {}'.format(DomSettings.system.interface._global_settings))
+        debug('allowwidgetordering: {}'.format(DomSettings.system.interface.allowwidgetordering))
         if has_to_be_updated:
             cls.update(True)
         # sinon on commence le tri
-        elif PluginConfig.sort_plan:
+        elif PluginConfig.sort_plan and DomSettings.system.interface.allowwidgetordering:
             if not cls._status & cls.MOVE_PLAN_DEVICE:
                 _OrderedDevices.init_devices()
                 debug('Ordered list', *_OrderedDevices.ordered_list)
