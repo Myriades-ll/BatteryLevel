@@ -64,7 +64,7 @@ Versions:
 
 # local lib
 import battery_level
-from domoticz_ import DomSettings
+from pluginhelper.settings.system.interface import Interface
 
 WRAPPER = battery_level.Wrapper()
 
@@ -75,7 +75,7 @@ def onStart() -> None:  # pylint: disable=invalid-name
     battery_level.PluginConfig(Parameters)
     battery_level.Images(Images)
     battery_level.Devices(Devices)
-    DomSettings(Settings)
+    Interface(Settings)
     WRAPPER.on_start()
     # pylint: enable=undefined-variable
 
