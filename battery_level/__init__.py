@@ -15,12 +15,10 @@ import Domoticz
 # local libs
 from battery_level.common import debug
 from battery_level.devices import Devices
-# from battery_level.dom_settings import DomSettings
 from battery_level.images import Images
 from battery_level.plans import Plans
 from battery_level.plugin_config import PluginConfig
 from battery_level.requests import Requests
-from domoticz_ import DomSettings
 
 
 class Wrapper:
