@@ -271,7 +271,7 @@ class Devices(_HardWares, Iterable[_Device]):
             cls._init_done = True
         return super(Devices, cls).__new__(cls)
 
-    @classmethod
+    @ classmethod
     def _init_map(cls: object) -> None:
         """Initialisation du mapping"""
         for device in cls._devices.values():
@@ -285,7 +285,7 @@ class Devices(_HardWares, Iterable[_Device]):
             })
         debug(cls._map_devices)
 
-    @classmethod
+    @ classmethod
     def _check_devices(cls: object) -> None:
         """Ajout/mise à jour des devices"""
         unit_ids_all = set(range(1, 255))
@@ -344,16 +344,17 @@ class Devices(_HardWares, Iterable[_Device]):
             int_device = cls._map_devices[device.DeviceID]
             if device.DeviceID not in cls.materials:  # device down
                 int_device.update(bat_lev=0)
-            if float(device.sValue) != int_device.bat_lev:
+            bat_lev = str(round(int_device.bat_lev, 1))
+            if device.sValue != bat_lev:
                 device.Update(
                     0,
-                    str(round(int_device.bat_lev, 1)),
+                    bat_lev,
                     Image=Images()[int_device.image_id]
                 )
             else:
                 device.Touch()
 
-    @classmethod
+    @ classmethod
     def remove(cls: object, unit_id: int) -> None:
         """Retire le device"""
         remove = 0
@@ -369,7 +370,7 @@ class Devices(_HardWares, Iterable[_Device]):
             return
         Domoticz.Error('Device not found! ({})'.format(unit_id))
 
-    @classmethod
+    @ classmethod
     def build_from_hardware(cls: object, hardwares: dict) -> None:
         """[summary]
 
@@ -382,12 +383,12 @@ class Devices(_HardWares, Iterable[_Device]):
         debug('Detected hardwares', **cls.materials)
         cls._check_devices()
 
-    @classmethod
+    @ classmethod
     def values(cls: object) -> List[_Device]:
         """Liste des devices"""
         return cls._devices.values()
 
-    @classmethod
+    @ classmethod
     def __iter__(cls: object) -> Iterator[_Device]:
         """Wrapper for ... in ..."""
         for device in cls._devices.values():
