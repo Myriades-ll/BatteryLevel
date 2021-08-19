@@ -21,7 +21,7 @@ from battery_level.requests import Requests
 
 class _HardWares:
     """Collections des matériels"""
-    materials: Mapping[str, Tuple[float, str, datetime]] = {}
+    materials: Mapping[str, Tuple[float, str, datetime, int]] = {}
 
     @classmethod
     def items(cls: object) -> Tuple[str, float, str, datetime]:
@@ -50,7 +50,8 @@ class _HardWares:
                 hw_id: [
                     battery_level,
                     name,
-                    last_updated
+                    last_updated,
+                    datas['HardwareTypeVal']
                 ]
             })
 
@@ -170,16 +171,39 @@ class _Bounces:
 
 
 class _Device(_Bounces):
-    """Elément device"""
+    """Elément device
 
-    def __init__(self: object, unit_id: int, name: str, last_update: str, bat_level: str) -> None:
-        """Initialisation de la classe"""
+        [kwargs]:
+
+            - unit_id (str,int): Device.Unit
+            - name (str): Device.Name
+            - last_update (str): Device.LastUpdate
+            - bat_lev (str): Device.sValue
+            - dz_type (int): Device.Type
+    """
+
+    def __init__(self: object, **kwargs: dict) -> None:
+        """Initialisation de la classe
+
+        [kwargs]:
+
+            - unit_id (str,int): Device.Unit
+            - name (str): Device.Name
+            - last_update (str): Device.LastUpdate
+            - bat_lev (str): Device.sValue
+            - dz_type (int): Device.Type
+        """
         _Bounces.__init__(self, 2, 0, 100)
-        self.unit_id = int(unit_id)
+        self.unit_id = int(kwargs.get('unit_id'))
         self.name = ''
-        self.last_update = None
+        self.last_update: str = None
         self.bat_lev = 0
-        self.update(bat_lev=bat_level, last_update=last_update, name=name)
+        self.dz_type: int = kwargs.get('dz_type')
+        self.update(
+            bat_lev=kwargs['bat_lev'],
+            last_update=kwargs['last_update'],
+            name=kwargs['name']
+        )
         self.image_id = 'pyBattLev'
 
     def update(self: object, **kwargs: dict) -> None:
@@ -190,6 +214,7 @@ class _Device(_Bounces):
             - bat_lev (int, float): battery level
             - last_update (str, datetime): last time updated
             - name (str): new name
+            - dz_type (int): Domoticz device type
         """
         self.bat_lev = self._update_bounce(kwargs.get('bat_lev', self.bat_lev))
         self.last_update = last_update_2_datetime(kwargs.get(
@@ -197,11 +222,14 @@ class _Device(_Bounces):
             self.last_update
         ))
         self.name = kwargs.get('name', self.name)
+        self.dz_type = kwargs.get('dz_type', self.dz_type)
         self._detect_device_down()
         self._set_image_id()
 
     def _detect_device_down(self: object) -> None:
         """Detect device down"""
+        if self.dz_type in (1,):  # ignore detection
+            return
         max_time = self.last_update + timedelta(minutes=30)
         if max_time < datetime.now():
             Domoticz.Error('batterie déchargée: {}'.format(
@@ -228,8 +256,9 @@ class _Device(_Bounces):
 
     def __str__(self: object) -> str:
         """Wrapper pour str()"""
-        return '({}){}: {}% {}% - @{} (values in: {})'.format(
+        return '({}[{}]){}: {}% {}% - @{} (values in: {})'.format(
             self.unit_id,
+            self.dz_type,
             self.name,
             self.last_value_in,
             self.bat_lev,
@@ -277,22 +306,23 @@ class Devices(_HardWares, Iterable[_Device]):
         for device in cls._devices.values():
             cls._map_devices.update({
                 device.DeviceID: _Device(
-                    device.Unit,
-                    device.Name,
-                    device.LastUpdate,
-                    device.sValue
+                    unit_id=device.Unit,
+                    name=device.Name,
+                    last_update=device.LastUpdate,
+                    bat_lev=device.sValue,
+                    dz_type=device.Type
                 )
             })
-        debug(cls._map_devices)
 
     @ classmethod
     def _check_devices(cls: object) -> None:
         """Ajout/mise à jour des devices"""
         unit_ids_all = set(range(1, 255))
         unit_ids = set(
-            sorted({dev.unit_id for dev in cls._map_devices.values()}))
+            sorted({dev.unit_id for dev in cls._map_devices.values()})
+        )
         # check devices
-        for hw_key, hw_batlevel, hw_name, hw_last_update in cls.items():
+        for hw_key, hw_batlevel, hw_name, hw_last_update, dz_type in cls.items():
             # Création
             if hw_key not in cls._map_devices:
                 unit_ids_free = unit_ids_all - unit_ids
@@ -301,13 +331,14 @@ class Devices(_HardWares, Iterable[_Device]):
                     unit_ids.add(unit_id)
                 else:
                     Domoticz.Error('Plus de device disponible!')
-                    return
+                    break
                 cls._map_devices.update({
                     hw_key: _Device(
-                        unit_id,
-                        hw_name,
-                        hw_last_update,
-                        hw_batlevel
+                        unit_id=unit_id,
+                        name=hw_name,
+                        last_update=hw_last_update,
+                        bat_lev=hw_batlevel,
+                        dz_type=dz_type
                     )
                 })
                 Domoticz.Status('Création: {}'.format(hw_name))
@@ -336,7 +367,8 @@ class Devices(_HardWares, Iterable[_Device]):
             # Mise à jour interne
             cls._map_devices[hw_key].update(
                 bat_lev=hw_batlevel,
-                last_update=hw_last_update
+                last_update=hw_last_update,
+                dz_type=dz_type
             )
         # Mise à jour Domoticz
         debug('Internal device view', **cls._map_devices)
