@@ -37,11 +37,7 @@ def last_update_2_datetime(last_update: str) -> datetime:
                 *(strptime(last_update, dz_format)[0:6])
             )
         except AttributeError:
-            Domoticz.Error("datetime.strptime('{}', '{}')".format(
-                last_update,
-                dz_format
-            ))
-            Domoticz.Error("time.strptime('{}', '{}')".format(
+            Domoticz.Error("strptime [ {} <-> {} ]".format(
                 last_update,
                 dz_format
             ))
