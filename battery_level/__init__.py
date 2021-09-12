@@ -7,7 +7,7 @@ __all__ = ['Wrapper']
 # standards libs
 import json
 from time import time
-from typing import Iterable, Mapping, Tuple
+from typing import Any, Iterable, Mapping, Tuple
 
 # Domoticz lib
 import Domoticz
@@ -29,11 +29,11 @@ class Wrapper:
         "/json.htm?type=devices&used=true"
     )
 
-    def __init__(self: object) -> None:
+    def __init__(self) -> None:
         """Initialisation de la classe"""
         self._last_value_update = time()
 
-    def on_start(self: object, **_kwargs: dict) -> None:
+    def on_start(self, **_kwargs: Mapping[str, Any]) -> None:
         """Event démarrage"""
         Domoticz.Debugging(PluginConfig.debug_level)
         debug('{}'.format(PluginConfig()))
@@ -46,12 +46,12 @@ class Wrapper:
             Port='8080'
         )
 
-    def on_stop(self: object) -> None:
+    def on_stop(self) -> None:
         """Event arrêt"""
         if self._bat_lev_conn.Connected():
             self._bat_lev_conn.Disconnect()
 
-    def on_connect(self: object, *args: Tuple[Domoticz.Connection, int, str]) -> None:
+    def on_connect(self, *args: Tuple[Domoticz.Connection, int, str]) -> None:
         """Event connection
 
         [args]:
@@ -67,7 +67,7 @@ class Wrapper:
             else:
                 Domoticz.Error('Erreur: {} - {}'.format(status, description))
 
-    def on_message(self: object, *args: Tuple[Domoticz.Connection, dict]) -> None:
+    def on_message(self, *args: Tuple[Domoticz.Connection, dict]) -> None:
         """Event message
 
         [args]:
@@ -92,7 +92,7 @@ class Wrapper:
                 Domoticz.Error('{}'.format(Requests.last_out()))
                 Domoticz.Error('Erreur: {}'.format(status))
 
-    def on_heartbeat(self: object) -> None:
+    def on_heartbeat(self) -> None:
         """Event heartbeat"""
         if self._last_value_update <= time():
             self._last_value_update += 60 * 5
@@ -110,13 +110,13 @@ class Wrapper:
         """Event device modified"""
         debug(unit_id)
 
-    def on_device_removed(self: object, unit_id: int) -> None:
+    def on_device_removed(self, unit_id: int) -> None:
         """Event device removed"""
         Devices.remove(unit_id)
         Requests.add(*self._five_m_datas)
 
     @staticmethod
-    def _dispatch_request(datas: dict) -> None:
+    def _dispatch_request(datas: Mapping[str, Any]) -> None:
         """"""
         # FIX: missing result; happens when there's no item
         if 'result' not in datas:
