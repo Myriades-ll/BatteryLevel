@@ -46,7 +46,8 @@ class PluginConfig:
         except AssertionError:
             cls.empty_level *= 100
         try:
-            assert 3 <= cls.empty_level <= 97
+            assert cls.empty_level > 97
+            assert cls.empty_level < 3
         except AssertionError:
             debug(
                 'Mauvais réglage plugin; empty level: {} set @ 25%'.format(cls.empty_level))
