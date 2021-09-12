@@ -23,14 +23,14 @@ from battery_level.requests import Requests
 
 class Wrapper:
     """Wrapper pour le plugin"""
-    _bat_lev_conn: Domoticz.Connection = None
-    _five_m_datas = (
+    _FIVE_M_DATAS = (
         "GET",
         "/json.htm?type=devices&used=true"
     )
 
     def __init__(self) -> None:
         """Initialisation de la classe"""
+        self._bat_lev_conn: Domoticz.Connection = None
         self._last_value_update = time()
 
     def on_start(self, **_kwargs: Mapping[str, Any]) -> None:
@@ -96,7 +96,7 @@ class Wrapper:
         """Event heartbeat"""
         if self._last_value_update <= time():
             self._last_value_update += 60 * 5
-            Requests.add(*self._five_m_datas)
+            Requests.add(*self._FIVE_M_DATAS)
             if PluginConfig.create_plan:
                 Plans.update()
         if Requests():
@@ -108,12 +108,12 @@ class Wrapper:
     @staticmethod
     def on_device_modified(unit_id: int) -> None:
         """Event device modified"""
-        debug(unit_id)
+        debug('Device modified: {}'.format(unit_id))
 
     def on_device_removed(self, unit_id: int) -> None:
         """Event device removed"""
         Devices.remove(unit_id)
-        Requests.add(*self._five_m_datas)
+        Requests.add(*self._FIVE_M_DATAS)
 
     @staticmethod
     def _dispatch_request(datas: Mapping[str, Any]) -> None:
