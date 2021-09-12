@@ -21,7 +21,7 @@ class Images(Mapping[str, Any]):
     }
     _init_done = False
 
-    def __new__(cls: object, images: Optional[Mapping[str, Domoticz.Image]] = None) -> object:
+    def __new__(cls, images: Optional[Mapping[str, Domoticz.Image]] = None) -> object:
         """Initialisation de la classe"""
         if not cls._init_done or isinstance(images, dict):
             cls.images = images
@@ -33,25 +33,25 @@ class Images(Mapping[str, Any]):
         return super(Images, cls).__new__(cls)
 
     @classmethod
-    def __getitem__(cls: object, key: str) -> int:
+    def __getitem__(cls, key: str) -> int:
         """Wrapper pour Images['']"""
         if key in cls.images:
             return cls.images[key].ID
         raise KeyError('Image index non trouvé: {}'.format(key))
 
     @classmethod
-    def __len__(cls: object) -> int:
+    def __len__(cls) -> int:
         return len(cls.images)
 
     @classmethod
-    def __iter__(cls: object) -> Iterator[Domoticz.Image]:
+    def __iter__(cls) -> Iterator[Domoticz.Image]:
         for image in cls.images.values():
             yield image
 
     @classmethod
-    def __str__(cls: object) -> str:
+    def __str__(cls) -> str:
         """Wrapper pour str()"""
 
     @classmethod
-    def __repr__(cls: object) -> str:
+    def __repr__(cls) -> str:
         """Wrapper pour repr()"""

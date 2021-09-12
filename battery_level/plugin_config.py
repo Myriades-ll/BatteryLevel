@@ -23,7 +23,7 @@ class PluginConfig:
     _parameters = {}
     _init_done = False
 
-    def __new__(cls: object, parameters: Optional[dict] = None) -> object:
+    def __new__(cls, parameters: Optional[dict] = None) -> object:
         """Initialisation de la classe"""
         if isinstance(parameters, dict) or not cls._init_done:
             cls._parameters = parameters
@@ -37,7 +37,7 @@ class PluginConfig:
         return super(PluginConfig, cls).__new__(cls)
 
     @classmethod
-    def _mode1(cls: object) -> None:
+    def _mode1(cls) -> None:
         """Interprétation mode 1 (empty_level, level_delta)"""
         cls.empty_level = float(cls._parameters.get('Mode1', cls.empty_level))
         # fix: incorrect empty level
@@ -54,23 +54,23 @@ class PluginConfig:
         cls.level_delta = (100 - cls.empty_level) / 3
 
     @classmethod
-    def _mode2(cls: object) -> None:
+    def _mode2(cls) -> None:
         """Interprétation mode 2 (use_every_devices)"""
         cls.use_every_devices = bool(int(cls._parameters.get('Mode2', cls.use_every_devices)))
 
     @classmethod
-    def _mode3(cls: object) -> None:
+    def _mode3(cls) -> None:
         """Interprétation mode 3 (notify_all)"""
         cls.notify_all = bool(int(cls._parameters.get('Mode3', cls.notify_all)))
 
     @classmethod
-    def _mode4(cls: object) -> None:
+    def _mode4(cls) -> None:
         """Interprétation mode 4 (plan_name, create_plan)"""
         cls.plan_name = cls._parameters.get('Mode4', cls.plan_name)
         cls.create_plan = bool(cls.plan_name)
 
     @classmethod
-    def _mode5(cls: object) -> None:
+    def _mode5(cls) -> None:
         """Interprétation mode 5 (sort_ascending, sort_descending, sort_plan)"""
         mode5 = int(cls._parameters.get('Mode5', 1))
         if mode5 == 1:
@@ -80,12 +80,12 @@ class PluginConfig:
         cls.sort_plan = cls.sort_ascending != cls.sort_descending
 
     @classmethod
-    def _mode6(cls: object) -> None:
+    def _mode6(cls) -> None:
         """Interprétation mode 6 (debug_level)"""
         cls.debug_level = int(cls._parameters.get('Mode6', cls.debug_level))
 
     @classmethod
-    def __str__(cls: object) -> str:
+    def __str__(cls) -> str:
         """Wrapper pour str()"""
         return '<PluginConfig>{}% - {} - {} - {} - {} - {} - {}'.format(
             cls.empty_level,
@@ -98,6 +98,6 @@ class PluginConfig:
         )
 
     @classmethod
-    def __repr__(cls: object) -> str:
+    def __repr__(cls) -> str:
         """Wrapper pour repr()"""
         return str(cls)

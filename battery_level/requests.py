@@ -18,7 +18,7 @@ class Requests(Sized):
     _last_out_datas = {}
 
     @classmethod
-    def add(cls: object, verb: str, url: str) -> None:
+    def add(cls, verb: str, url: str) -> None:
         """Ajoute un élément à la queue"""
         cls._last_in_datas = {
             "Verb": verb,
@@ -31,7 +31,7 @@ class Requests(Sized):
         ))
 
     @classmethod
-    def get(cls: object) -> dict:
+    def get(cls) -> dict:
         """Renvoie le premier élément inséré dans la queue"""
         cls._last_out_datas = cls._queue.popleft()
         debug('Sortie: {} ({})'.format(
@@ -41,31 +41,31 @@ class Requests(Sized):
         return cls._last_out_datas
 
     @classmethod
-    def last_in(cls: object) -> Optional[dict]:
+    def last_in(cls) -> Optional[dict]:
         """Renvoie le dernier élément inséré"""
         return cls._last_in_datas
 
     @classmethod
-    def last_out(cls: object) -> Optional[dict]:
+    def last_out(cls) -> Optional[dict]:
         """Renvoie le dernier élément sorti"""
         return cls._last_out_datas
 
     @classmethod
-    def __bool__(cls: object) -> bool:
+    def __bool__(cls) -> bool:
         """[return]: False if empty, else True"""
         return cls.__len__() > 0
 
     @classmethod
-    def __len__(cls: object) -> bool:
+    def __len__(cls) -> bool:
         """[return]: size of queue"""
         return len(cls._queue)
 
     @classmethod
-    def __repr__(cls: object) -> str:
+    def __repr__(cls) -> str:
         """Wrapper pour repr()"""
         return cls.__str__()
 
     @classmethod
-    def __str__(cls: object) -> str:
+    def __str__(cls) -> str:
         """Wrapper pour str()"""
         return '{} requests still in queue'.format(cls.__len__())

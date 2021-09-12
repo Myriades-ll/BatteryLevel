@@ -20,13 +20,13 @@ from pluginhelper.settings.system.interface import Interface
 class _OrderedListItem:
     """Elément de la liste ordonnée"""
 
-    def __init__(self: object, devidx: int, name: str, bat_lev: int) -> None:
+    def __init__(self, devidx: int, name: str, bat_lev: int) -> None:
         """Initialisation de la classe"""
         self.devidx = devidx
         self.name = name
         self.bat_lev = bat_lev
 
-    def __str__(self: object) -> str:
+    def __str__(self) -> str:
         """Wrapper pour str()"""
         return '({}){}: {}%'.format(
             self.devidx,
@@ -34,7 +34,7 @@ class _OrderedListItem:
             self.bat_lev
         )
 
-    def __repr__(self: object) -> str:
+    def __repr__(self) -> str:
         """Wrapper pour repr()"""
         return str(self)
 
@@ -44,25 +44,25 @@ class _OrderedDevices:
     ordered_list: List[_OrderedListItem] = []
     _device_dict: Mapping[int, _OrderedListItem] = {}
 
-    def __new__(cls: object) -> object:
+    def __new__(cls) -> object:
         """Initialisation de la classe"""
         cls.init_devices()
         return super(_OrderedDevices, cls).__new__(cls)
 
     @classmethod
-    def init_devices(cls: object) -> None:
+    def init_devices(cls) -> None:
         """Remplissage des listes"""
         for device in Devices():
             cls._update(device.ID, device.Name, float(device.sValue))
         cls._sort()
 
     @classmethod
-    def values(cls: object) -> List[_OrderedListItem]:
+    def values(cls) -> List[_OrderedListItem]:
         """Wrapper pour for ... in ... loop"""
         return cls.ordered_list
 
     @classmethod
-    def _update(cls: object, devidx: int, name: str, bat_lev: int, sort: bool = False) -> None:
+    def _update(cls, devidx: int, name: str, bat_lev: int, sort: bool = False) -> None:
         """Ajoute un device"""
         # mise à jour du dictionnaire des devices
         cls._device_dict.update({
@@ -72,7 +72,7 @@ class _OrderedDevices:
             cls._sort()
 
     @classmethod
-    def _sort(cls: object) -> None:
+    def _sort(cls) -> None:
         """Tri des données
 
         tri par niveau de batterie puis nom
@@ -87,17 +87,17 @@ class _OrderedDevices:
         )
 
     @classmethod
-    def __getitem__(cls: object, key: int) -> _OrderedListItem:
+    def __getitem__(cls, key: int) -> _OrderedListItem:
         """Retourne le device à l'index 'key'"""
         return cls.ordered_list[key]
 
     @classmethod
-    def __repr__(cls: object) -> str:
+    def __repr__(cls) -> str:
         """Wrapper pour repr()"""
         return str(cls)
 
     @classmethod
-    def __str__(cls: object) -> str:
+    def __str__(cls) -> str:
         """Wrapper pour str()"""
         return "Ordered list: {}".format(cls.ordered_list)
 
@@ -134,7 +134,7 @@ class Plans:
     _status = INIT_PLANS
     _init_done = False
 
-    def __new__(cls: object) -> object:
+    def __new__(cls) -> object:
         """Initialisation de la classe"""
         if not cls._init_done:
             _OrderedDevices()
@@ -143,7 +143,7 @@ class Plans:
         return super(Plans, cls).__new__(cls)
 
     @classmethod
-    def _init_plan(cls: object) -> None:
+    def _init_plan(cls) -> None:
         """Initialisation du plan des devices"""
         if 'plan_id' in Domoticz.Configuration():
             cls._plan_id = int(Domoticz.Configuration()['plan_id'])
@@ -155,7 +155,7 @@ class Plans:
             Requests.add("GET", cls.urls.get("plans"))
 
     @classmethod
-    def update(cls: object, force: bool = False) -> None:
+    def update(cls, force: bool = False) -> None:
         """Appel de mise à jour
 
         Args:
@@ -169,7 +169,7 @@ class Plans:
             )
 
     @classmethod
-    def check_plans(cls: object, datas: List[Mapping[str, str]]) -> None:
+    def check_plans(cls, datas: List[Mapping[str, str]]) -> None:
         """vérifie l'existence du plans dans la liste des plans, si non création"""
         # Vérifier l'existence du plan
         for value in datas:
@@ -190,7 +190,7 @@ class Plans:
             )
 
     @classmethod
-    def check_plans_devices(cls: object, datas: list) -> None:
+    def check_plans_devices(cls, datas: list) -> None:
         """Reçoit la liste des devices dans le plan"""
         has_to_be_updated = False
         # enregistrement local du plan des devices
@@ -220,7 +220,7 @@ class Plans:
             cls._order_plan_devices(datas)
 
     @classmethod
-    def _order_plan_devices(cls: object, datas: List[Mapping[str, str]]) -> None:
+    def _order_plan_devices(cls, datas: List[Mapping[str, str]]) -> None:
         """Tri des devices dans le plan"""
         def move_down(down: bool, plan_device: Mapping[str, str]) -> None:
             """bouge l'emplacement du device dans la plan"""
@@ -264,7 +264,7 @@ class Plans:
         cls._status ^= cls.GET_PLAN_DEVICES
 
     @classmethod
-    def __str__(cls: object) -> str:
+    def __str__(cls) -> str:
         """Wrapper pour str()"""
         return 'Plan ID: {} - Status: {}'.format(
             cls._plan_id,
@@ -272,6 +272,6 @@ class Plans:
         )
 
     @classmethod
-    def __repr__(cls: object) -> str:
+    def __repr__(cls) -> str:
         """Wrapper pour repr()"""
         return str(cls)
