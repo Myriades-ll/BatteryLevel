@@ -5,6 +5,7 @@
 # standard libs
 from collections import deque, namedtuple
 from datetime import datetime, timedelta
+from enum import IntEnum
 from statistics import mean
 from typing import Iterable, Iterator, List, Mapping, Tuple, Union
 from urllib.parse import quote_plus
@@ -24,14 +25,17 @@ class _HardWares:
     materials: Mapping[str, Tuple[float, str, datetime, int]] = {}
 
     @classmethod
-    def items(cls: object) -> Tuple[str, float, str, datetime]:
+    def items(cls) -> Tuple[str, float, str, datetime]:
         """for...in... extended wrapper"""
         for key, value in cls.materials.items():
             yield (key, *value)
 
     @classmethod
-    def update(cls: object, datas: dict) -> bool:
+    def update(cls, datas: dict) -> bool:
         """Ajoute ou met à jour un matériel"""
+        # no battery material
+        if datas['HardwareTypeVal'] in (23,):
+            return
         battery_level = float(datas['BatteryLevel'])
         if 0 < battery_level <= 100:
             brand = datas['HardwareType'].split()[0]
@@ -56,17 +60,17 @@ class _HardWares:
             })
 
     @classmethod
-    def __repr__(cls: object) -> str:
+    def __repr__(cls) -> str:
         """repr() Wrapper"""
         return str(cls.materials)
 
     @classmethod
-    def __str__(cls: object) -> str:
+    def __str__(cls) -> str:
         """str() Wrapper"""
         return str(cls.materials)
 
     @classmethod
-    def _build_hw_id(cls: object, datas: dict) -> str:
+    def _build_hw_id(cls, datas: dict) -> str:
         """[DOCSTRING]"""
         return '{}{}{}'.format(
             ('0{}'.format(datas['HardwareTypeVal']))[-2:],
@@ -75,7 +79,7 @@ class _HardWares:
         )
 
     @classmethod
-    def _refactor_name(cls: object, hw_id: str, brand: str, name: str) -> str:
+    def _refactor_name(cls, hw_id: str, brand: str, name: str) -> str:
         """Re-construit le nom du device"""
         old_list = cls.materials[hw_id][1].split()
         common_list = list(set(old_list) & set(
@@ -99,19 +103,24 @@ class _HardWares:
         return str(hw_id)[-4:]
 
 
+class _BounceModes(IntEnum):
+    """Modes de pondération"""
+    DISABLED = 0x1      # pas de pondération
+    SYSTEMATIC = 0x2    # mémoire de la valeur la plus basse
+    POND_1H = 0x4       # pondération sur 1h
+    POND_1D = 0x8       # opndération sur 1 journée
+
+
 class _Bounces:
     """Gestion des rebonds des valeurs"""
-    _BOUNCEMODES = namedtuple(
-        'Modes', ['DISABLED', 'SYSTEMATIC', 'POND_1H', 'POND_1D'])
     _MINMAX = namedtuple('minmax', ['MIN', 'MAX', 'MIN_RESET', 'MAX_RESET'])
 
     def __init__(
-            self: object,
-            mode: int,
+            self,
+            mode: _BounceModes,
             mini: Union[str, int, float] = 0,
             maxi: Union[str, int, float] = 100) -> None:
         """Initialisation de la classe"""
-        self._modes = self._BOUNCEMODES(0, 1, 2, 4)
         self._bounce_mode = mode
         self._min_max = self._MINMAX(
             mini,
@@ -121,11 +130,11 @@ class _Bounces:
         )
         self.last_value_out = self.last_value_in = 100.0
         self._pond = 12
-        if mode == 4:
+        if mode & _BounceModes.POND_1D:
             self._pond = 288
         self._datas = deque(maxlen=self._pond)
 
-    def _update_bounce(self: object, new_data: Union[str, int, float]) -> float:
+    def _update_bounce(self, new_data: Union[str, int, float]) -> float:
         """Mise à jour des données"""
         try:
             assert type(new_data) in [str, int, float]
@@ -134,16 +143,18 @@ class _Bounces:
         self.last_value_in = float(new_data)
         # reset system
         if (
-                self.last_value_in >= self._min_max.MAX_RESET
+                self.last_value_in >= self._min_max.MIN_RESET
                 and self.last_value_out <= self._min_max.MIN_RESET
+                or self.last_value_out == 0
+                and self.last_value_in > 0
         ):
             self._datas.clear()
             self.last_value_out = self.last_value_in
-        # return as is
-        if self._bounce_mode == self._modes.DISABLED:
+        # no bounce, return as is
+        if self._bounce_mode & _BounceModes.DISABLED:
             self.last_value_out = self.last_value_in
         # no bounce; always remembering the lowest value
-        elif self._bounce_mode & self._modes.SYSTEMATIC:
+        elif self._bounce_mode & _BounceModes.SYSTEMATIC:
             if self.last_value_in < self.last_value_out:
                 self.last_value_out = self.last_value_in
         else:
@@ -153,19 +164,19 @@ class _Bounces:
             self.last_value_out = mean(self._datas)
         return self.last_value_out
 
-    def __str__(self: object) -> str:
+    def __str__(self) -> str:
         """Wrapper pour str()"""
-        return '{} {}'.format(self._modes, self._bounce_mode)
+        return '{} {}'.format(_BounceModes(), self._bounce_mode)
 
-    def __repr__(self: object) -> str:
+    def __repr__(self) -> str:
         """Wrapper pour repr()"""
         return str(self)
 
-    def __float__(self: object) -> float:
+    def __float__(self) -> float:
         """Wrapper pour float()"""
         return self.last_value_out
 
-    def __int__(self: object) -> int:
+    def __int__(self) -> int:
         """Wrapper pour int()"""
         return int(self.last_value_out)
 
@@ -182,7 +193,7 @@ class _Device(_Bounces):
             - dz_type (int): Device.Type
     """
 
-    def __init__(self: object, **kwargs: dict) -> None:
+    def __init__(self, **kwargs: dict) -> None:
         """Initialisation de la classe
 
         [kwargs]:
@@ -193,7 +204,7 @@ class _Device(_Bounces):
             - bat_lev (str): Device.sValue
             - dz_type (int): Device.Type
         """
-        _Bounces.__init__(self, 2, 0, 100)
+        _Bounces.__init__(self, _BounceModes.SYSTEMATIC, 0, 100)
         self.unit_id = int(kwargs.get('unit_id'))
         self.name = ''
         self.last_update: str = None
@@ -206,7 +217,7 @@ class _Device(_Bounces):
         )
         self.image_id = 'pyBattLev'
 
-    def update(self: object, **kwargs: dict) -> None:
+    def update(self, **kwargs: dict) -> None:
         """Mise à jour
 
         [kwargs]:
@@ -226,7 +237,7 @@ class _Device(_Bounces):
         self._detect_device_down()
         self._set_image_id()
 
-    def _detect_device_down(self: object) -> None:
+    def _detect_device_down(self) -> None:
         """Detect device down"""
         if self.dz_type in (1,):  # ignore detection
             return
@@ -237,7 +248,7 @@ class _Device(_Bounces):
             ))
             self.bat_lev = self._update_bounce(0)
 
-    def _set_image_id(self: object) -> None:
+    def _set_image_id(self) -> None:
         """Define Domoticz image ID
 
         Returns:
@@ -254,7 +265,7 @@ class _Device(_Bounces):
         else:
             self.image_id = "pyBattLev_ko"
 
-    def __str__(self: object) -> str:
+    def __str__(self) -> str:
         """Wrapper pour str()"""
         return '({}[{}]){}: {}% {}% - @{} (values in: {})'.format(
             self.unit_id,
@@ -266,7 +277,7 @@ class _Device(_Bounces):
             len(self._datas)
         )
 
-    def __repr__(self: object) -> str:
+    def __repr__(self) -> str:
         """Wrapper pour repr()"""
         return str(self)
 
@@ -292,7 +303,7 @@ class Devices(_HardWares, Iterable[_Device]):
     }
     _init_done = False
 
-    def __new__(cls: object, devices: Mapping[str, Domoticz.Device] = None) -> object:
+    def __new__(cls, devices: Mapping[str, Domoticz.Device] = None) -> object:
         """Initialisation de la classe"""
         if not cls._init_done or isinstance(devices, dict):
             cls._devices = devices
@@ -301,7 +312,7 @@ class Devices(_HardWares, Iterable[_Device]):
         return super(Devices, cls).__new__(cls)
 
     @ classmethod
-    def _init_map(cls: object) -> None:
+    def _init_map(cls) -> None:
         """Initialisation du mapping"""
         for device in cls._devices.values():
             cls._map_devices.update({
@@ -315,7 +326,7 @@ class Devices(_HardWares, Iterable[_Device]):
             })
 
     @ classmethod
-    def _check_devices(cls: object) -> None:
+    def _check_devices(cls) -> None:
         """Ajout/mise à jour des devices"""
         unit_ids_all = set(range(1, 255))
         unit_ids = set(
@@ -387,23 +398,21 @@ class Devices(_HardWares, Iterable[_Device]):
                 device.Touch()
 
     @ classmethod
-    def remove(cls: object, unit_id: int) -> None:
-        """Retire le device"""
-        remove = 0
+    def remove(cls, unit_id: int) -> None:
+        """Retire le device
+        BUG: entering infinite loop when removing unit, unit is not found in map!
+        """
         for key, value in cls._map_devices.items():
             if value.unit_id == unit_id:
-                remove = key
-                break
-        if remove:
-            Domoticz.Status('Removing: {}'.format(
-                cls._devices[cls._map_devices[remove]].Name
-            ))
-            cls._map_devices.pop(remove)
-            return
+                Domoticz.Status('Removing: {}'.format(
+                    cls._devices[cls._map_devices[key]].Name
+                ))
+                cls._map_devices.pop(key)
+                return
         Domoticz.Error('Device not found! ({})'.format(unit_id))
 
     @ classmethod
-    def build_from_hardware(cls: object, hardwares: dict) -> None:
+    def build_from_hardware(cls, hardwares: dict) -> None:
         """[summary]
 
         Args:
@@ -416,12 +425,12 @@ class Devices(_HardWares, Iterable[_Device]):
         cls._check_devices()
 
     @ classmethod
-    def values(cls: object) -> List[_Device]:
+    def values(cls) -> List[_Device]:
         """Liste des devices"""
         return cls._devices.values()
 
     @ classmethod
-    def __iter__(cls: object) -> Iterator[_Device]:
+    def __iter__(cls) -> Iterator[_Device]:
         """Wrapper for ... in ..."""
         for device in cls._devices.values():
             yield device
