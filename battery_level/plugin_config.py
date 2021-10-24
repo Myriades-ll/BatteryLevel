@@ -18,7 +18,7 @@ class PluginConfig:
     sort_ascending = False
     sort_descending = False
     sort_plan = False
-    plan_name = ''
+    plan_name = ''  # leave empty for no plan
     debug_level = 0
     _parameters = {}
     _init_done = False
@@ -57,12 +57,20 @@ class PluginConfig:
     @classmethod
     def _mode2(cls) -> None:
         """Interprétation mode 2 (use_every_devices)"""
-        cls.use_every_devices = bool(int(cls._parameters.get('Mode2', cls.use_every_devices)))
+        cls.use_every_devices = bool(
+            int(
+                cls._parameters.get('Mode2', cls.use_every_devices)
+            )
+        )
 
     @classmethod
     def _mode3(cls) -> None:
         """Interprétation mode 3 (notify_all)"""
-        cls.notify_all = bool(int(cls._parameters.get('Mode3', cls.notify_all)))
+        cls.notify_all = bool(
+            int(
+                cls._parameters.get('Mode3', cls.notify_all)
+            )
+        )
 
     @classmethod
     def _mode4(cls) -> None:
