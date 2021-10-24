@@ -5,7 +5,7 @@
 # standard libs
 from collections import deque, namedtuple
 from datetime import datetime, timedelta
-from enum import IntFlag, auto
+from enum import IntFlag, auto, unique
 from statistics import mean
 from typing import Iterable, Iterator, List, Mapping, Tuple, Union
 from urllib.parse import quote_plus
@@ -103,6 +103,7 @@ class _HardWares:
         return str(hw_id)[-4:]
 
 
+@unique
 class _BounceModes(IntFlag):
     """Modes de pondération"""
     DISABLED = auto()    # pas de pondération
@@ -129,6 +130,7 @@ class _Bounces:
             100 - PluginConfig.empty_level
         )
         self.last_value_out = self.last_value_in = 100.0
+        # DISABLED or SYSTEMATIC bounce mode
         self._pond = 1
         if mode & _BounceModes.POND_1H:
             self._pond = 12
@@ -160,7 +162,7 @@ class _Bounces:
                 self._datas.append(self.last_value_out)
         else:
             self._datas.append(self.last_value_in)
-            if len(self._datas) == 1:
+            if len(self._datas) != self._pond:
                 self._datas *= self._pond
         self.last_value_out = mean(self._datas)
         return self.last_value_out
