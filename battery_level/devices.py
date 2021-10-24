@@ -154,6 +154,7 @@ class _Bounces:
         ):
             self._datas.clear()
             self._datas.append(self.last_value_in)
+            self.last_value_out = 100
         # no bounce; always remembering the lowest value
         if self._bounce_mode & _BounceModes.SYSTEMATIC:
             if self.last_value_in < self.last_value_out:
