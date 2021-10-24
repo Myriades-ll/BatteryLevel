@@ -105,10 +105,10 @@ class _HardWares:
 
 class _BounceModes(IntFlag):
     """Modes de pondération"""
-    DISABLED = 0x0      # pas de pondération
+    DISABLED = auto()    # pas de pondération
     SYSTEMATIC = auto()  # mémoire de la valeur la plus basse
-    POND_1H = auto()    # pondération sur 1h
-    POND_1D = auto()    # opndération sur 1 journée
+    POND_1H = auto()     # pondération sur 1h
+    POND_1D = auto()     # opndération sur 1 journée
 
 
 class _Bounces:
@@ -129,8 +129,10 @@ class _Bounces:
             100 - PluginConfig.empty_level
         )
         self.last_value_out = self.last_value_in = 100.0
-        self._pond = 12
-        if mode & _BounceModes.POND_1D:
+        self._pond = 1
+        if mode & _BounceModes.POND_1H:
+            self._pond = 12
+        elif mode & _BounceModes.POND_1D:
             self._pond = 288
         self._datas = deque(maxlen=self._pond)
 
@@ -149,19 +151,18 @@ class _Bounces:
                 and self.last_value_in > 0
         ):
             self._datas.clear()
-            self.last_value_out = self.last_value_in
-        # no bounce, return as is
-        if self._bounce_mode & _BounceModes.DISABLED:
-            self.last_value_out = self.last_value_in
+            self._datas.append(self.last_value_in)
         # no bounce; always remembering the lowest value
-        elif self._bounce_mode & _BounceModes.SYSTEMATIC:
+        if self._bounce_mode & _BounceModes.SYSTEMATIC:
             if self.last_value_in < self.last_value_out:
-                self.last_value_out = self.last_value_in
+                self._datas.append(self.last_value_in)
+            else:
+                self._datas.append(self.last_value_out)
         else:
             self._datas.append(self.last_value_in)
             if len(self._datas) == 1:
                 self._datas *= self._pond
-            self.last_value_out = mean(self._datas)
+        self.last_value_out = mean(self._datas)
         return self.last_value_out
 
     def __str__(self) -> str:
