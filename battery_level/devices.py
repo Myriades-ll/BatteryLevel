@@ -106,7 +106,7 @@ class _HardWares:
 class _BounceModes(IntFlag):
     """Modes de pondération"""
     DISABLED = 0x0      # pas de pondération
-    SYSTEMATIC = auto() # mémoire de la valeur la plus basse
+    SYSTEMATIC = auto()  # mémoire de la valeur la plus basse
     POND_1H = auto()    # pondération sur 1h
     POND_1D = auto()    # opndération sur 1 journée
 
@@ -194,16 +194,7 @@ class _Device(_Bounces):
     """
 
     def __init__(self, **kwargs: dict) -> None:
-        """Initialisation de la classe
-
-        [kwargs]:
-
-            - unit_id (str,int): Device.Unit
-            - name (str): Device.Name
-            - last_update (str): Device.LastUpdate
-            - bat_lev (str): Device.sValue
-            - dz_type (int): Device.Type
-        """
+        """Initialisation de la classe"""
         _Bounces.__init__(self, _BounceModes.SYSTEMATIC, 0, 100)
         self.unit_id = int(kwargs.get('unit_id'))
         self.name = ''
@@ -239,7 +230,8 @@ class _Device(_Bounces):
 
     def _detect_device_down(self) -> None:
         """Detect device down"""
-        if self.dz_type in (1,):  # ignore detection
+        # ignore detection
+        if self.dz_type in (1,):
             return
         max_time = self.last_update + timedelta(minutes=30)
         if max_time < datetime.now():
@@ -279,7 +271,7 @@ class _Device(_Bounces):
 
     def __repr__(self) -> str:
         """Wrapper pour repr()"""
-        return str(self)
+        return self.__str__()
 
 
 class Devices(_HardWares, Iterable[_Device]):
@@ -416,7 +408,6 @@ class Devices(_HardWares, Iterable[_Device]):
         """[summary]
 
         Args:
-
             - hardwares (dict): les devices obtenus de l'api domoticz
         """
         for data in hardwares:
