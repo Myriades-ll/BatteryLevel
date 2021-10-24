@@ -5,7 +5,7 @@
 # standard libs
 from collections import deque, namedtuple
 from datetime import datetime, timedelta
-from enum import IntEnum
+from enum import IntFlag, auto
 from statistics import mean
 from typing import Iterable, Iterator, List, Mapping, Tuple, Union
 from urllib.parse import quote_plus
@@ -103,12 +103,12 @@ class _HardWares:
         return str(hw_id)[-4:]
 
 
-class _BounceModes(IntEnum):
+class _BounceModes(IntFlag):
     """Modes de pondération"""
-    DISABLED = 0x1      # pas de pondération
-    SYSTEMATIC = 0x2    # mémoire de la valeur la plus basse
-    POND_1H = 0x4       # pondération sur 1h
-    POND_1D = 0x8       # opndération sur 1 journée
+    DISABLED = 0x0      # pas de pondération
+    SYSTEMATIC = auto() # mémoire de la valeur la plus basse
+    POND_1H = auto()    # pondération sur 1h
+    POND_1D = auto()    # opndération sur 1 journée
 
 
 class _Bounces:
@@ -311,7 +311,7 @@ class Devices(_HardWares, Iterable[_Device]):
             cls._init_done = True
         return super(Devices, cls).__new__(cls)
 
-    @ classmethod
+    @classmethod
     def _init_map(cls) -> None:
         """Initialisation du mapping"""
         for device in cls._devices.values():
@@ -325,7 +325,7 @@ class Devices(_HardWares, Iterable[_Device]):
                 )
             })
 
-    @ classmethod
+    @classmethod
     def _check_devices(cls) -> None:
         """Ajout/mise à jour des devices"""
         unit_ids_all = set(range(1, 255))
@@ -397,7 +397,7 @@ class Devices(_HardWares, Iterable[_Device]):
             else:
                 device.Touch()
 
-    @ classmethod
+    @classmethod
     def remove(cls, unit_id: int) -> None:
         """Retire le device
         BUG: entering infinite loop when removing unit, unit is not found in map!
@@ -411,7 +411,7 @@ class Devices(_HardWares, Iterable[_Device]):
                 return
         Domoticz.Error('Device not found! ({})'.format(unit_id))
 
-    @ classmethod
+    @classmethod
     def build_from_hardware(cls, hardwares: dict) -> None:
         """[summary]
 
@@ -424,12 +424,12 @@ class Devices(_HardWares, Iterable[_Device]):
         debug('Detected hardwares', **cls.materials)
         cls._check_devices()
 
-    @ classmethod
+    @classmethod
     def values(cls) -> List[_Device]:
         """Liste des devices"""
         return cls._devices.values()
 
-    @ classmethod
+    @classmethod
     def __iter__(cls) -> Iterator[_Device]:
         """Wrapper for ... in ..."""
         for device in cls._devices.values():
