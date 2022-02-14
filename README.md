@@ -22,7 +22,7 @@ This is a [Domoticz](https://www.domoticz.com/) plugin.
 
 ## Tested over
 
-* RPi4 with RaspiOS (buster) - Domoticz 2021.1 - Python 3.7.3
+* RPi4 with RaspiOS (buster) - Domoticz 2021.1/2022.1 - Python 3.7.3
 
 ## TIPS
 
