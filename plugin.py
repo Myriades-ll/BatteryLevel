@@ -72,17 +72,17 @@ WRAPPER = battery_level.Wrapper()
 def onStart() -> None:  # pylint: disable=invalid-name
     """Démarrage du plugin"""
     # pylint: disable=undefined-variable
-    battery_level.PluginConfig(Parameters)
-    battery_level.Images(Images)
-    battery_level.Devices(Devices)
-    Interface(Settings)
-    WRAPPER.on_start()
+    # battery_level.PluginConfig(Parameters)
+    # battery_level.Images(Images)
+    # battery_level.Devices(Devices)
+    # Interface(Settings)
+    # WRAPPER.on_start()
     # pylint: enable=undefined-variable
 
 
 def onStop() -> None:  # pylint: disable=invalid-name
     """onStop"""
-    WRAPPER.on_stop()
+    # WRAPPER.on_stop()
 
 
 def onConnect(*args) -> None:  # pylint: disable=invalid-name
@@ -109,7 +109,7 @@ def onDisconnect(*_args) -> None:  # pylint: disable=invalid-name
 
 def onHeartbeat() -> None:  # pylint: disable=invalid-name
     """onHeartbeat"""
-    WRAPPER.on_heartbeat()
+    # WRAPPER.on_heartbeat()
 
 
 def onDeviceModified(*args) -> None:  # pylint: disable=invalid-name
